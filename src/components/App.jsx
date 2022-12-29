@@ -16,38 +16,52 @@ export class App extends Component {
     filter: '',
   };
 
+  componentDidMount() {
+    const contactsInLS = localStorage.getItem('contacts');
+    if (contactsInLS) {
+      this.setState({ contacts: JSON.parse(contactsInLS) });
+    }
+  }
+
+  componentDidUpdate(_, prevState) {
+    const { contacts } = this.state;
+    if (contacts.length !== prevState.contacts.length) {
+      localStorage.setItem('contacts', JSON.stringify(contacts));
+    }
+  }
+
   handleChange = event => {
     const { name, value } = event.target;
     this.setState({ [name]: value });
   };
 
-  handleDelete = id => {
+  handleSubmitForm = (event, name, number) => {
+    event.preventDefault();
+    return this.handleAddedContact(name, number);
+  };
+
+  handleAddedContact = (name, number) => {
+    const { contacts } = this.state;
+    //Контакт вже існує, повертає false
+    if (contacts.some(contact => contact.name === name)) {
+      alert(`${name} is already in contacts.`);
+      return;
+    }
+
+    //Інакше додає новий контакт, повертає true
+    this.setState(prevState => ({
+      contacts: [...prevState.contacts, { id: nanoid(), name, number }],
+    }));
+    return true;
+  };
+
+  handleDeleteContact = id => {
     this.setState(prevState => ({
       contacts: prevState.contacts.filter(item => item.id !== id),
     }));
   };
 
-  handleSubmitForm = (event, name, number) => {
-    event.preventDefault();
-    if (this.checkContact(name)) {
-      alert(`${name} is already in contacts.`);
-      return;
-    }
-    this.setState(prevState => ({
-      contacts: [
-        ...prevState.contacts,
-        { id: nanoid(), name: name, number: number },
-      ],
-    }));
-    return true;
-  };
-
-  checkContact = newName => {
-    const { contacts } = this.state;
-    return contacts.some(({ name }) => name === newName);
-  };
-
-  filteredContacts = filter => {
+  handleFilterContacts = filter => {
     const { contacts } = this.state;
     return contacts.filter(({ name }) => {
       return name.toLowerCase().includes(filter.toLowerCase());
@@ -55,8 +69,10 @@ export class App extends Component {
   };
 
   render() {
-    const { filter } = this.state;
-    const filteredContacts = this.filteredContacts(filter);
+    const { contacts, filter } = this.state;
+    const renderContacts = filter
+      ? this.handleFilterContacts(filter)
+      : contacts;
 
     return (
       <>
@@ -66,8 +82,8 @@ export class App extends Component {
         <Section title="Contacts" headingLevel="h2">
           <Filter filter={filter} onChange={this.handleChange} />
           <ContactList
-            contacts={filteredContacts}
-            onDelete={this.handleDelete}
+            contacts={renderContacts}
+            onDelete={this.handleDeleteContact}
           />
         </Section>
       </>

@@ -8,10 +8,11 @@ export const ContactList = ({ contacts, onDelete }) => {
       {contacts.map(({ id, name, number }) => (
         <ContactsItem
           key={id}
-          id={id}
           name={name}
           number={number}
-          onDelete={onDelete}
+          onDelete={() => {
+            onDelete(id);
+          }}
         ></ContactsItem>
       ))}
     </ContactsListStyled>
